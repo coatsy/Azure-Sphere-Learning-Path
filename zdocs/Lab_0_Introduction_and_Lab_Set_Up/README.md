@@ -48,12 +48,26 @@ If you are using a shared lab device, then the lab instructor will tell you the 
 
 ---
 
-## Step 1: Install the Developer Tools
+## Step 1: Software Installation
 
-On Windows 10, [Visual Studio (The free Community Edition or better)](https://visualstudio.microsoft.com/vs/?WT.mc_id=github-blog-dglover) is recommended
+The following is the recommended software for Windows 10 and Ubuntu 18.04.
 
-On Ubuntu 18.04, install the latest version of [Visual Studio Code](https://code.visualstudio.com/?WT.mc_id=github-blog-dglover) and the [Azure Sphere Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.azure-sphere-tools&WT.mc_id=github-blog-dglover).
+### Windows 10 Recommended Software
 
+1. [Visual Studio (The free Community Edition or better)](https://visualstudio.microsoft.com/vs/?WT.mc_id=github-blog-dglover)
+2. [Azure Sphere SDK for Visual Studio](https://docs.microsoft.com/en-au/azure-sphere/install/install-sdk#azure-sphere-sdk-for-visual-studio)
+3. [Git for Windows](https://git-scm.com/downloads)
+4. [Install Azure Sphere drivers for Windows](https://docs.microsoft.com/en-au/azure-sphere/install/install-sdk#set-up-your-dev-kit-on-a-windows-pc)
+
+### Ubuntu 18.04 Recommended Software
+
+1. [Visual Studio Code](https://code.visualstudio.com/?WT.mc_id=github-blog-dglover)
+2. [Azure Sphere Extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=ms-vscode.azure-sphere-tools&WT.mc_id=github-blog-dglover).
+3. [Install the Azure Sphere SDK on Linux](https://docs.microsoft.com/en-au/azure-sphere/install/install-sdk-linux)
+4. [Set up your Linux system for app development](https://docs.microsoft.com/en-au/azure-sphere/install/development-environment-linux)
+4. Install Git support ```apt install git```.
+
+For complete instructions follow the Azure Sphere [Overview of set up procedures](https://docs.microsoft.com/en-au/azure-sphere/install/overview?WT.mc_id=github-blog-dglover) guide.
 ---
 
 ## Step 2: Clone the Azure Sphere Learning Path
@@ -68,7 +82,7 @@ git clone https://github.com/gloveboxes/Azure-Sphere-Learning-Path.git Azure-Sph
 
 ---
 
-## Step 3: Azure Learning Path Directory Layout
+## Step 3: Review the Azure Learning Path Directory Layout
 
 The labs support the three currently available developer kits from Avnet and Seeed Studio.
 
@@ -83,19 +97,35 @@ Lab directories are named by Azure Sphere device manufacturer.
 
 ---
 
-## Step 4: Install the Azure Sphere SDK and Developer Tools
+## Step 4: Claim your Azure Sphere
 
-Follow the Azure Sphere [Overview of set up procedures](https://docs.microsoft.com/en-au/azure-sphere/install/overview?WT.mc_id=github-blog-dglover) guide.
+**Skip this step if you are using a lab device or you have already claimed your Azure Sphere.**
 
-## Step 5: Claim your device
+**Note**, claiming an Azure Sphere device is a one-time operation. The device will become associated with an Azure Sphere Tenant and the email address you used when you claimed the device.
 
-Skip this step if you are using a lab device or you have already claimed.
+You **cannot move** the device to another Azure Tenant once it has been claimed. However, you can add additional [users and roles](https://docs.microsoft.com/en-us/azure-sphere/deployment/add-tenant-users) to the Azure Sphere tenant, including users with Admin rights.
 
-[Claim your device](https://docs.microsoft.com/en-au/azure-sphere/install/claim-device?WT.mc_id=github-blog-dglover)
+[Claim your Azure Sphere device](https://docs.microsoft.com/en-au/azure-sphere/install/claim-device?WT.mc_id=github-blog-dglover)
 
-## Step 6: Configure Network
+---
 
-[Configure WiFi Settings](https://docs.microsoft.com/en-au/azure-sphere/install/configure-wifi?WT.mc_id=github-blog-dglover)
+## Step 5: Configure the Azure Sphere WiFi Networking
+
+[Configure the Azure Sphere WiFi Settings](https://docs.microsoft.com/en-au/azure-sphere/install/configure-wifi?WT.mc_id=github-blog-dglover)
+
+---
+
+## Step 6: Ensure Azure Sphere OS Updated
+
+As of March 2020, your device should be version **20.01** or better.
+
+1. Start the **Azure Sphere Developer Command Prompt**
+	1. Press the <kbd>Windows Key</kbd>
+	2. Start typing **Azure Sphere Developer Command Prompt**
+	3. Select and start the **Azure Sphere Developer Command Prompt**.
+2. Check the device OS version ```azsphere dev show-os-version```
+3. If the device is not up to date, then restart the device ```azsphere dev restart```. This will trigger an update.
+4. It will take a few minutes for the update to be applied. Then recheck the OS version ```azsphere dev show-os-version```.
 
 ---
 

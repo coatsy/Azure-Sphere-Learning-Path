@@ -102,7 +102,7 @@ Today the Mediatec MT3620 MCU powers Azure Sphere. The family of certified Azure
 
 ---
 
-## Building Real Solutions
+## Azure Sphere in Action
 
 ### Divvy Parking
 
@@ -114,7 +114,7 @@ Building solutions with pre-certified Azure Sphere modules is the fastest way to
 
 ![Prototype PCB design](zdocs/resources/divvy-parking.png)
 
-*Prototype PCB design included here with permission of Divvy Parking*
+*Prototype PCB design included here with the permission of Divvy Parking*
 
 ### Starbucks and the Avnet Azure Sphere Guardian Module
 
@@ -149,8 +149,7 @@ These labs support the following Azure Sphere Kits.
 
 | Manufacturer | Image |
 |---|---|
-| [Avnet Azure Sphere MT3620 Starter Kit](https://www.avnet.com/shop/us/products/avnet-engineering-services/aes-ms-mt3620-sk-g-3074457345636825680/)  
-This starter kit includes temperature, pressure and light sensors. | ![Avnet Azure Sphere MT3620 Starter Kit](zdocs/resources/avnet-azure-sphere.jpg)|
+| [Avnet Azure Sphere MT3620 Starter Kit](https://www.avnet.com/shop/us/products/avnet-engineering-services/aes-ms-mt3620-sk-g-3074457345636825680/). This starter kit includes a 3D accelerometer, a 3D Gyro, along with temperature, pressure, and ambient light sensors. | ![Avnet Azure Sphere MT3620 Starter Kit](zdocs/resources/avnet-azure-sphere.jpg)|
 | [Seeed Studio Azure Sphere MT3620 Development Kit](http://wiki.seeedstudio.com/Azure_Sphere_MT3620_Development_Kit/) | ![Seeed Studio Azure Sphere MT3620 Development Kit](zdocs/resources/seeed-studio-azure-sphere.png) |
 | [Seeed Studio Azure Sphere MT3620 Mini Dev Board]() | ![Seeed Studio Azure Sphere MT3620 Mini Dev Board](zdocs/resources/seeed-studio-azure-sphere-mini.png) |
 
