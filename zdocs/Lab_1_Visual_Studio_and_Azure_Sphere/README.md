@@ -245,6 +245,8 @@ From Visual Studio open the **app_manifest.json** file.
 
 This application can only access the resources listed in the **Capabilities** section.
 
+**Note**, the following example is for the Avnet Azure Sphere device. The resource names and capabilities will differ depending on which Azure Sphere device you are using.
+
 ```json
   "Capabilities": {
     "Gpio": [ "$AVNET_MT3620_SK_GPIO0", "$AVNET_MT3620_SK_APP_STATUS_LED_YELLOW", "$AVNET_MT3620_SK_WLAN_STATUS_LED_YELLOW" ],
@@ -320,6 +322,12 @@ Set a debugger breakpoint by clicking in the margin to the left of the line of c
 **Stop** the debugger by using the Visual Studio <kbd>Shift+F5</kbd> keyboard shortcut or click the **Stop Debugging** icon.
 
 ![](resources/vs-stop-debugger.png)
+
+---
+
+## Close Visual Studio
+
+Now close **Close Visual Studio**.
 
 ---
 
