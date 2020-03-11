@@ -7,7 +7,7 @@
 |Author|[Dave Glover](https://developer.microsoft.com/en-us/advocates/dave-glover?WT.mc_id=github-blog-dglover), Microsoft Cloud Developer Advocate, [@dglover](https://twitter.com/dglover) |
 |:----|:---|
 |Source Code | https://github.com/gloveboxes/Azure-Sphere-Learning-Path.git |
-|Date| January  2020|
+|Date| March  2020|
 
 ---
 
@@ -27,122 +27,207 @@ Each module assumes you have completed the previous module.
 
 ---
 
-## Prerequisites
-
-This lab assumes you have completed [Lab 2: Send Telemetry from an Azure Sphere to Azure IoT Central](https://github.com/gloveboxes/Azure-Sphere-Learning-Path/tree/master/Lab%202%20-%20Send%20Telemetry%20from%20an%20Azure%20Sphere%20to%20Azure%20IoT%20Central). You will have created an Azure IoT Central application, connected Azure IoT Central to your Azure Sphere Tenant and you have configured the **app_manifest.json** for the Azure Device Provisioning Service.
-
-You will need to **copy** and **paste** the Lab 2 **app_manifest.json** you created to this labs **app_manifest.json** file.
-
----
-
-## Problems Addressed in this Tutorial
-
-1. Internet enabling an existing FreeRTOS application
-2. End to end security for telemetry and device control
-
 ## What you will learn
 
-1. How to run a **FreeRTOS** Real-Time application on Azure Sphere and integrate with Azure IoT.
-2. How to create an Azure IoT Central Application.
-3. How to integrate an [Azure Sphere](https://azure.microsoft.com/services/azure-sphere/?WT.mc_id=github-blog-dglover) application with [Azure IoT Central](https://azure.microsoft.com/services/iot-central/?WT.mc_id=github-blog-dglover).
-4. How to securely control an Azure Sphere with Azure IoT Central Device **[Settings](https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-device-twins?WT.mc_id=github-blog-dglover)** and **[Commands](https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-direct-methods?WT.mc_id=github-blog-dglover)**.
+You will learn how to deploy a [FreeRTOS](https://www.freertos.org/) application to an Azure Sphere Cortex M4 Real-Time core.
 
-If unfamiliar with Azure Sphere development then review the [Create a Secure Azure Sphere App using the Grove Shield Sensor Kit](https://github.com/gloveboxes/Create-a-Secure-Azure-Sphere-App-using-the-Grove-Shield-Sensor-Kit) tutorial before starting this tutorial.
+You can run Bare Metal applications or applications built on Real-Time frameworks such as FreeRTOS and Azure RTOS on the Azure Sphere Real-Time cores.
+
+The main reason you would run an application on a Real-Time core is when you need precise or highly deterministic timing. For example, you have a sensor driver that requires precise timing.
+
+For security, applications running on Real-Time cores do not have direct internet access. They communicate with the internet via a High-Level application.
+
+ In this lab, you will also learn about **Inter-Core** messaging.
 
 ---
 
-## Azure Sphere Solution Architecture
+## Prerequisites
 
-There are **two** applications deployed to the Azure Sphere.
-
-1. The first application is a **High-Level** *Linux* application running on the **Cortex A7** core. It is responsible for sending temperature and humidity data to Azure IoT Central, processing Digital Twin and Direct Method messages from Azure IoT Central, and finally, passing on **inter-core** messages from the *FreeRTOS* application running on the Real-Time core to Azure IoT Central.
-1. The second is a **Real-Time** *FreeRTOS* application running in the **Cortex M4**. It runs several FreeRTOS Tasks. The first task is to blink an LED, the second is to monitor for button presses, and the third is to send **inter-core** messages to the **High-Level** application whenever the button is pressed. **Note**, the FreeRTOS application running on the Real-Time core cannot connect directly to the network.
-
-![](resources/azure-sphere-application-architecture.png)
+None.
 
 ---
 
 ## Tutorial Overview
 
-1. Set up your development environment.
+1. Enable Real-Time core development
 2. Deploy your first FreeRTOS Application to Azure Sphere.
-3. Create an Azure IoT Central Application (Free trial).
-4. Connect Azure IoT Central to your Azure Sphere Tenant.
-5. Deploy an Azure IoT Central application to Azure Sphere.
 
 ---
 
-## Ensure you have cloned the Azure Sphere Learning Path source code
+## Key Concepts
 
-```bash
-git clone https://github.com/gloveboxes/Azure-Sphere-Learning-Path.git
+In this lab, you will learn how to secure, deploy, and debug a **Real-Time** FreeRTOS application running on one of the Azure Sphere **Cortex M4** Real-Time cores.
+
+As a reminder, the Azure Sphere has three application cores. The Cortex A7 runs High-Level applications, the two Cortex M4s run Real-Time applications.
+
+Like High-Level applications, Real-Time core applications are locked down by default, so you need to grant permissions to access hardware resources.
+
+For security, applications running on Real-Time cores cannot connect directly to **any** network.
+
+In this lab and the next, you will learn about  **Inter-Core** messaging. Inter-Core messaging provides a secure channel for applications running on different cores to communicate.
+
+![](resources/azure-sphere-application-architecture.png)
+
+### Inter-Core Messaging Security
+
+The FreeRTOS application will send **Button Pressed** events to the **Partner** High-Level application. The High-Level application will then forward the events to Azure IoT Central on behalf of the FreeRTOS application.
+
+Both the FreeRTOS application running on the Real-Time core and the High-Level application need **Inter-Core** messaging permissions. The **app_manifest.json** property **AllowedApplicationConnections** of both applications must include the _Component ID_ of the **Partner** application.
+
+In the following FreeRTOS Real-Time **app_manifest.json** file, the **AllowedApplicationConnections** property is set to the Component ID of the High-Level application.
+
+```json
+{
+    "SchemaVersion": 1,
+    "Name": "GPIO_RTApp_MT3620_BareMetal",
+    "ComponentId": "6583cf17-d321-4d72-8283-0b7c5b56442b",
+    "EntryPoint": "/bin/app",
+    "CmdArgs": [],
+    "Capabilities": {
+        "Gpio": [ "$AVNET_AESMS_PIN13_GPIO10", "$AVNET_AESMS_PIN14_GPIO12" ],
+        "AllowedApplicationConnections": [ "25025d2c-66da-4448-bae1-ac26fcdd3627" ]
+    },
+    "ApplicationType": "RealTimeCapable"
+}
+```
+
+In the following High-Level **app_manifest.json** file, the **AllowedApplicationConnections** property is set to the Component ID of the FreeRTOS Real-Time application.
+
+```json
+{
+  "SchemaVersion": 1,
+  "Name": "AzureSphereIoTCentral",
+  "ComponentId": "25025d2c-66da-4448-bae1-ac26fcdd3627",
+  "EntryPoint": "/bin/app",
+  "CmdArgs": [ "Real", "<Relplace with your Scope ID>", "6583cf17-d321-4d72-8283-0b7c5b56442b" ],
+  "Capabilities": {
+    "Gpio": [ "$AVNET_MT3620_SK_GPIO0", "$AVNET_MT3620_SK_APP_STATUS_LED_YELLOW", "$AVNET_MT3620_SK_WLAN_STATUS_LED_YELLOW" ],
+    "Uart": [],
+    "I2cMaster": [ "$AVNET_MT3620_SK_ISU2_I2C" ],
+    "Adc": [ "$AVNET_MT3620_SK_ADC_CONTROLLER0" ],
+    "AllowedConnections": [ "global.azure-devices-provisioning.net", "<Replace with your Azure IoT Central URI>" ],
+    "DeviceAuthentication": "00000000-0000-0000-0000-000000000000",
+    "AllowedApplicationConnections": [ "6583cf17-d321-4d72-8283-0b7c5b56442b" ]
+  },
+  "ApplicationType": "Default"
+}
 ```
 
 ---
 
-## Enable Real Time Core Debugging
+## Set up FreeRTOS Real-Time Core Development
 
-TODO:// Include section on CMake requirements
+### Step 1: Enable Real-Time Core Debugging
 
 Run the **Azure Sphere Developer Command Prompt** as **Administrator**.
 
-Run the following command to install the required USB drivers to support real-time core debugging.
+1. Press the <kbd>Windows Key</kbd>
+2. Start typing **Azure Sphere Developer Command Prompt**
+3. Select **Run as administrator**
+![](resources/azure-sphere-command-prompt-as-administrator.png)
+4. Run
 
-```bash
-azsphere.exe device enable-development -r
-```
+    ```bash
+    azsphere device enable-development -r
+    ```
+
+5. Exit the command prompt, type **exit**, and press return.
+
+### Step 2: Copy the Floating Point Toolchain
+
+The **AzureSphereRTCoreToolchainVFP.cmake** file is required to build the FreeRTOS application.
+
+Copy the **AzureSphereRTCoreToolchainVFP.cmake** file from **Azure Sphere Learning Path** directory to the system Azure Sphere SDK CMakeFiles directory. The Default destination path is **C:\Program Files (x86)\Microsoft Azure Sphere SDK\CMakeFiles**.
 
 ---
 
-## Step 1: Start Visual Studio 2019
+## Delete Existing Applications on the Azure Sphere
+
+1. There will be some GPIO pin reassignments between the existing High-Level application that is running on the Azure Sphere and the new Real-Time application that will be deployed to the Azure Sphere in this lab. So delete any existing applications on the Azure Sphere to avoid any clashes.
+
+    From the **Azure Sphere Developer Command Prompt**, run
+
+    ```bash
+    azsphere device sideload delete
+    ```
+2. Restart the Azure Sphere. From the **Azure Sphere Developer Command Prompt**, run
+
+    ```bash
+    azsphere device restart
+    ```
+
+---
+
+## Open Lab 4
+
+### Step 1: Start Visual Studio 2019
 
 ![](resources/visual-studio-open-local-folder.png)
 
----
-
-## Step 2: Open the lab project
+### Step 2: Open the lab project
 
 1. Click **Open a local folder**
-2. Navigate to the folder you cloned **Azure Sphere Learning Path** into.
-3. Double click to open the **Lab_4_FreeRTOS_and_Inter-Core_Messaging** folder
-4. Click **Select Folder** button to open the project
+2. Open the Azure-Sphere lab folder
+3. Open the **folder name** that corresponds to the **Azure Sphere board** you are using
+4. Open the **Lab_4_FreeRTOS_and_Inter-Core_Messaging** folder
+5. Click **Select Folder** button to open the project
 
 ---
 
-## Deploy your first FreeRTOS Application to Azure Sphere
+## Deploy the FreeRTOS Application to Azure Sphere
 
 1. Set the startup configuration. Select the **ARM-Debug** configuration and the **GDB Debugger (RTCore)** startup item.
 
     ![](resources/azure-sphere-rtcore-startup-config.png)
 3. Press <kbd>**F5**</kbd>, this will start the build, deploy, attach debugger process. The leftmost **blue LED** on the Azure Sphere will start **blinking**.
-5. Press **Button A** on the Azure Sphere to change the blink rate. 
-6. You can **Remote Debug** the FreeRTOS application running on Azure Sphere Cortex M4 Core. 
-    1. From Visual Studio, open the FreeRTOS application **main.c** file.
-    2. Set a [Visual Studio Breakpoint](https://docs.microsoft.com/en-us/visualstudio/debugger/using-breakpoints?view=vs-2019) in the **ButtonTask** function on the line that reads ```bool pressed = !newState;```.
-    3. Press **Button A** on the Azure Sphere, Visual Studio will halt the execution of the FreeRTOS application and you can step through the code. Pretty darn neat!
 
-### Understanding the Real-Time Core Security
+---
 
-Applications on the Azure Sphere are locked down by default. You need to grant capabilities to the application.
+## Expected Behaviour
 
-From Visual Studio open the **app_manifest.json** file.
+### Avnet Azure Sphere MT3620 Starter Kit
 
-**Observe**:
+![](resources/avnet-azure-sphere.jpg)
 
-1. GPIO Capabilities: This application uses two GPIO pins. Pins 10, and 12.
-2. Allowed Application Connections: This is the ID of the High-Level application that this application will be partnered with. It is required for inter-core communications.
+1. The blue LED will start to blink
+2. Press **Button A** on the device to change the blink rate.
 
-```json
-{
-  "SchemaVersion": 1,
-  "Name": "GPIO_RTApp_MT3620_BareMetal",
-  "ComponentId": "6583cf17-d321-4d72-8283-0b7c5b56442b",
-  "EntryPoint": "/bin/app",
-  "CmdArgs": [],
-  "Capabilities": {
-    "Gpio": [ 10, 12 ],
-    "AllowedApplicationConnections": [ "25025d2c-66da-4
-```
+### Azure Sphere MT3620 Development Kit
+
+![](resources/seeed-studio-azure-sphere-rdb.jpg)
+
+1. The blue LED will start to blink
+2. Press **Button A** on the device to change the blink rate.
+
+### Seeed Studio MT3620 Mini Dev Board
+
+![](resources/seeed-studio-azure-sphere-mini.png)
+
+1. The green LED, the one closest to the USB plug will start to blink.
+2. The Seeed Studio Azure Sphere Mini developer kit does not have a built-in button, so every 10 seconds the blink rate will change automatically.
+
+---
+
+## Debugging Real-Time Core Applications
+
+You can Debug the FreeRTOS application running on Azure Sphere Cortex M4 Real-Time Core.
+
+1. From Visual Studio, open the FreeRTOS application **main.c** file.
+2. Scroll down to the C function named **LedTask**.
+3. Set a [Visual Studio Breakpoint](https://docs.microsoft.com/en-us/visualstudio/debugger/using-breakpoints?view=vs-2019) in the **LedTask** function on the line that reads **rt = xSemaphoreTake(LEDSemphr, portMAX_DELAY);**
+
+    ![](resources/visual-studio-debug-led-task.png)
+4. The code will stop executing at the breakpoint
+    ![](resources/visual-studio-debug-led-task-stop.png)
+5.  You can now start stepping through the code by pressing <kbd>**F10**</kbd> to step over, <kbd>**F11**</kbd> to step into, or <kbd>**F5**</kbd> to continue.
+6. Explorer debugging, hover the mouse over the variable named **BuiltInLedOn** and you can see its current value.
+7. Click on the **red dot** to delete the breakpoint, and press <kbd>**F5**</kbd> to continue execution.
+
+---
+
+## Finished 完了 fertig finito ख़त्म होना terminado
+
+**Do NOT** close or stop Visual Studio as we need the FreeRTOS application running for the next lab.
 
 ---
 

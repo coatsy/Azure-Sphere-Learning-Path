@@ -15,8 +15,8 @@ void OpenDirectMethodSet(DirectMethodBinding* directMethods[], size_t directMeth
 }
 
 void CloseDirectMethodSet(void) {
-	for (int i = 0; i < _directMethodCount; i++) { 
-		CloseFdAndPrintError(_directMethods[i]->peripheral.fd, _directMethods[i]->peripheral.name); 
+	for (int i = 0; i < _directMethodCount; i++) {
+		CloseFdAndPrintError(_directMethods[i]->peripheral.fd, _directMethods[i]->peripheral.name);
 	}
 }
 
@@ -36,6 +36,7 @@ int AzureDirectMethodHandler(const char* method_name, const unsigned char* paylo
 
 	const char* responseMessage = methodNotFoundMsg;
 	int result = METHOD_NOT_FOUND;
+	size_t responseMessageLength;
 
 	JSON_Value* root_value = NULL;
 	JSON_Object* jsonObject = NULL;
@@ -77,7 +78,7 @@ int AzureDirectMethodHandler(const char* method_name, const unsigned char* paylo
 		}
 	}
 
-	if (directMethodBinding != NULL) {	// was a DirectMethodBinding found
+	if (directMethodBinding != NULL && directMethodBinding->handler != NULL) {	// was a DirectMethodBinding found
 		MethodResponseCode responseCode = directMethodBinding->handler(jsonObject, directMethodBinding);
 
 		result = (int)responseCode;
@@ -97,23 +98,30 @@ int AzureDirectMethodHandler(const char* method_name, const unsigned char* paylo
 
 cleanup:
 
-	// Prepare the payload for the response. This is a heap allocated null terminated string.
+	// Prepare the payload for the response.
 	// The Azure IoT Hub SDK is responsible of freeing it.
+	responseMessageLength = strlen(responseMessage);
+	*responsePayloadSize = responseMessageLength + 2; // add two as going to wrap the message with quotes for JSON
 
-	*responsePayloadSize = strlen(responseMessage) + 2; // add two as going to wrap the message with quotes for JSON
 	*responsePayload = (unsigned char*)malloc(*responsePayloadSize);
-
-	// response message needs to be wrapped in quotes as part of a JSON object
-	strcpy((char*)(*responsePayload), "\"");
-	strncpy((char*)(*responsePayload + 1), responseMessage, *responsePayloadSize - 2);
-	strcpy((char*)(*responsePayload + *responsePayloadSize - 1), "\"");
+	if (*responsePayload != NULL) {
+		// response message needs to be wrapped in quotes as it is part of the JSON payload object
+		memcpy(*responsePayload, "\"", 1);
+		memcpy(*responsePayload + 1, responseMessage, responseMessageLength);
+		memcpy(*responsePayload + responseMessageLength + 1, "\"", 1);
+	}
+	else {
+		*responsePayloadSize = 0;
+	}
 
 	if (root_value != NULL) {
 		json_value_free(root_value);
 	}
 
-	free(payLoadString);
-	payLoadString = NULL;
+	if (payLoadString != NULL) {
+		free(payLoadString);
+		payLoadString = NULL;
+	}
 
 	if (directMethodBinding != NULL) {
 		if (directMethodBinding->responseMessage != NULL) { // there was memory allocated for a response message so free it now

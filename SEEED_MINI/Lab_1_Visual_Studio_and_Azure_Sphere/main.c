@@ -26,7 +26,7 @@ static Peripheral builtinLed = {
 };
 
 static Timer measureSensorTimer = {
-	.period = { 5, 0 },
+	.period = { 4, 0 },
 	.name = "MeasureSensor",
 	.timerEventHandler = MeasureSensorHandler
 };
@@ -37,11 +37,9 @@ Peripheral* peripherals[] = { &builtinLed };
 Timer* timers[] = { &measureSensorTimer };
 
 #pragma endregion
-// end define sets for auto initialization and close
 
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
 	Log_Debug("Application starting.\n");
 	RegisterTerminationHandler();
 
@@ -67,20 +65,23 @@ int main(int argc, char* argv[])
 /// <summary>
 /// Azure timer event:  Check connection status and send telemetry
 /// </summary>
-static void MeasureSensorHandler(EventLoopTimer* eventLoopTimer)
-{
+static void MeasureSensorHandler(EventLoopTimer* eventLoopTimer) {
+	const struct timespec sleepTime = { 0, 250000000L };
+
 	if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0) {
 		Terminate();
 		return;
 	}
 
-	GPIO_ON(builtinLed); // blink built in LED
+	Gpio_On(&builtinLed); // blink built in LED
 
 	if (ReadTelemetry(msgBuffer, JSON_MESSAGE_BYTES) > 0) {
 		Log_Debug("%s\n", msgBuffer);
 	}
 
-	GPIO_OFF(builtinLed);
+	nanosleep(&sleepTime, NULL);
+
+	Gpio_Off(&builtinLed);
 }
 
 
@@ -88,9 +89,8 @@ static void MeasureSensorHandler(EventLoopTimer* eventLoopTimer)
 ///     Set up SIGTERM termination handler, initialize peripherals, and set up event handlers.
 /// </summary>
 /// <returns>0 on success, or -1 on failure</returns>
-static int InitPeripheralsAndHandlers(void)
-{
-	InitializeDevKit();  // Avnet Starter kit
+static int InitPeripheralsAndHandlers(void) {
+	InitializeDevKit();
 
 	OpenPeripheralSet(peripherals, NELEMS(peripherals));
 	StartTimerSet(timers, NELEMS(timers));
@@ -101,14 +101,13 @@ static int InitPeripheralsAndHandlers(void)
 /// <summary>
 ///     Close peripherals and handlers.
 /// </summary>
-static void ClosePeripheralsAndHandlers(void)
-{
+static void ClosePeripheralsAndHandlers(void) {
 	Log_Debug("Closing file descriptors\n");
 
 	StopTimerSet();
 
 	ClosePeripheralSet();
-	CloseDevKit();	// Avnet Starter kit
+	CloseDevKit();
 
 	StopTimerEventLoop();
 }
